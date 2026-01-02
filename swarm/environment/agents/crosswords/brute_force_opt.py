@@ -10,7 +10,9 @@ from swarm.environment.agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register('CrosswordsBruteForceOpt')
 class CrosswordsBruteForceOpt(Graph):
-    def __init__(self, domain: str, model_name: Optional[str] = None, meta_prompt: bool = False, num_iters=3):
+    def __init__(self, domain: str, model_name: Optional[str] = None, meta_prompt: bool = False, 
+                 # TODO: cut from num_iters=3
+                 num_iters=1):
         self.num_iters = num_iters
         super().__init__(domain, model_name, meta_prompt)
     def build_graph(self):

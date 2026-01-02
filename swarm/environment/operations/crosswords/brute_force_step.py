@@ -45,6 +45,7 @@ class BruteForceStep(CrosswordsOperation):
         llm_querier = self.llm_query_with_cache
         env = deepcopy(inputs["env"])
         prompt = self.prompt_set.get_propose_prompt(env.render())
+        print("[brute force step]--- Current progress is: ", env.return_progress())
         response = await llm_querier(prompt)
         candidates = parse_response(response)[:self.max_candidates]
         _, env = self.brute_force_optimize([candidate for candidate, _ in candidates], [score for _, score in candidates], env)

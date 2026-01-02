@@ -26,6 +26,7 @@ class GreedySteps(CrosswordsOperation):
         llm_querier = self.llm_query_with_cache
         env = inputs["env"]
         prompt = self.prompt_set.get_propose_prompt(env.render())
+        print("[greedy step]--- Current progress is: ", env.return_progress())
         response = await llm_querier(prompt)
         candidates = parse_response(response)
         env = deepcopy(env)

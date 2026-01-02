@@ -35,6 +35,7 @@ class BranchingStep(CrosswordsOperation):
                 "env": env
             }]
         prompt = self.prompt_set.get_propose_prompt(env.render())
+        print("[branching step]--- Current progress is: ", env.return_progress())
         response = await llm_querier(prompt)
         candidates = parse_response(response)[:self.branch_factor]
 

@@ -177,6 +177,10 @@ class MiniCrosswordsEnv:
             s += '\nSuggestions:\n' + '\n'.join(self.hints[-1:])
         return s
     
+    def return_progress(self):
+        # return number of filled letters in the board
+        return sum(1 for c in self.board if c != '_')
+    
     def get_ans(self, board):
         ans = [''] * 10
         for i in range(5):

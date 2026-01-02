@@ -3,6 +3,7 @@ from swarm.llm.format import Message, Status
 from swarm.llm.llm import LLM
 from swarm.llm.mock_llm import MockLLM # must be imported before LLMRegistry
 from swarm.llm.gpt_chat import GPTChat # must be imported before LLMRegistry
+from swarm.llm.huggingface_chat import HuggingFaceChat # must be imported before LLMRegistry
 from swarm.llm.llm_registry import LLMRegistry
 
 from swarm.llm.visual_llm import VisualLLM

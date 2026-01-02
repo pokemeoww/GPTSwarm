@@ -8,7 +8,9 @@ from experiments.evaluator.evaluator import Evaluator
 from experiments.evaluator.datasets.mmlu_dataset import MMLUDataset
 from datasets.MMLU.download import download
 
-
+"""
+Run MMLU Pro
+"""
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
 

@@ -10,7 +10,9 @@ from swarm.environment.agents.agent_registry import AgentRegistry
 
 @AgentRegistry.register('CrosswordsToT')
 class CrosswordsToT(Graph):
-    def __init__(self, domain: str, model_name: Optional[str] = None, meta_prompt: bool = False, depth=8, branch_factor=2, prune=True):
+    def __init__(self, domain: str, model_name: Optional[str] = None, meta_prompt: bool = False, 
+                 # TODO: cut from depth 8
+                 depth=3, branch_factor=2, prune=True):
         self.depth = depth
         self.branch_factor = branch_factor
         self.prune = prune

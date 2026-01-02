@@ -16,75 +16,57 @@ from icl_retrieval.reranker import RerankerModel
 from swarm.graph import Node
 from swarm.llm.format import Message
 
-# Check if we need to load demo-related models
-use_demo = os.environ.get("use_demo", "false")
+embedding_model_path = os.environ["EMBEDDING_MODEL_PATH"]
 
-# Only load embedding model and retrievers if using ICL
-if use_demo.lower() == "true":
-    print(f"[CrosswordsOperation] Loading demo models for method: {use_demo}")
-    
-    embedding_model_path = os.environ["EMBEDDING_MODEL_PATH"]
-    from icl_retrieval.utils.retrievers import FaissRetriever
-    
-    # Get device - use CPU for embedding model to save MPS memory
-    device = 'cpu'
-    print(f"[CrosswordsOperation] Using device for embedding model: {device}")
-    
-    embed_model = SentenceTransformer(
-                embedding_model_path
-            ).to(device)
-    embed_model.eval()
-    
-    # Base path for demo files
-    demo_base_path = os.environ.get("DEMO_BASE_PATH", "data/final_demo_dec_13")
-    
-    demo_retriever = FaissRetriever(
-        os.path.join(demo_base_path, "direct_demos.json"),
-        os.path.join(demo_base_path, "direct_demos.npy"),
-        embed_model=embed_model
-    ) if os.path.exists(os.path.join(demo_base_path, "direct_demos.json")) else None
-    
-    # retriever for demos
-    propose_demo_retriever = FaissRetriever(
-        os.path.join(demo_base_path, "list_demos_propose.json"),
-        os.path.join(demo_base_path, "list_demos_propose.npy"),
-        embed_model=embed_model
+from icl_retrieval.utils.retrievers import FaissRetriever
+
+# Get device (MPS for Apple Silicon, CUDA for NVIDIA, CPU as fallback)
+device = get_device()
+print(f"[ICL CrosswordsOperation] Using device: {device}")
+
+embed_model = SentenceTransformer(
+            embedding_model_path
+        ).to(device)
+embed_model.eval()
+
+# Base path for demo files
+demo_base_path = os.environ.get("DEMO_BASE_PATH", "data/final_demo_dec_13")
+
+demo_retriever = FaissRetriever(
+    os.path.join(demo_base_path, "direct_demos.json"),
+    os.path.join(demo_base_path, "direct_demos.npy"),
+    embed_model=embed_model
+) if os.path.exists(os.path.join(demo_base_path, "direct_demos.json")) else None
+
+# retriever for demos
+propose_demo_retriever = FaissRetriever(
+    os.path.join(demo_base_path, "list_demos_propose.json"),
+    os.path.join(demo_base_path, "list_demos_propose.npy"),
+    embed_model=embed_model
+)
+if_correct_demo_retriever = FaissRetriever(
+    os.path.join(demo_base_path, "list_demos_if_correct.json"),
+    os.path.join(demo_base_path, "list_demos_if_correct.npy"),
+    embed_model=embed_model
+)
+suggest_demo_retriever = FaissRetriever(
+    os.path.join(demo_base_path, "list_demos_suggest.json"),
+    os.path.join(demo_base_path, "list_demos_suggest.npy"),
+    embed_model=embed_model
+)
+value_demo_retriever = FaissRetriever(
+    os.path.join(demo_base_path, "list_demos_value.json"),
+    os.path.join(demo_base_path, "list_demos_value.npy"),
+    embed_model=embed_model
+)
+
+# reranker
+demo_reranker = None
+reranker_ckpt_path = os.environ.get("reranker_ckpt_path")
+if reranker_ckpt_path:
+    demo_reranker = RerankerModel(
+        bert_model_path=reranker_ckpt_path
     )
-    if_correct_demo_retriever = FaissRetriever(
-        os.path.join(demo_base_path, "list_demos_if_correct.json"),
-        os.path.join(demo_base_path, "list_demos_if_correct.npy"),
-        embed_model=embed_model
-    )
-    suggest_demo_retriever = FaissRetriever(
-        os.path.join(demo_base_path, "list_demos_suggest.json"),
-        os.path.join(demo_base_path, "list_demos_suggest.npy"),
-        embed_model=embed_model
-    )
-    value_demo_retriever = FaissRetriever(
-        os.path.join(demo_base_path, "list_demos_value.json"),
-        os.path.join(demo_base_path, "list_demos_value.npy"),
-        embed_model=embed_model
-    )
-    
-    # reranker
-    demo_reranker = None
-    reranker_ckpt_path = os.environ.get("reranker_ckpt_path")
-    if reranker_ckpt_path:
-        demo_reranker = RerankerModel(
-            bert_model_path=reranker_ckpt_path
-        )
-    
-    print(f"[CrosswordsOperation] Demo models loaded successfully")
-else:
-    # Baseline mode: don't load any demo-related models
-    print(f"[CrosswordsOperation] Baseline mode (use_demo={use_demo}), skipping demo model loading")
-    embed_model = None
-    demo_retriever = None
-    propose_demo_retriever = None
-    if_correct_demo_retriever = None
-    suggest_demo_retriever = None
-    value_demo_retriever = None
-    demo_reranker = None
 
 
 def prompt_type_cls(prompt):
@@ -177,8 +159,6 @@ class CrosswordsOperation(Node):
                     demo_str += f"{input_}\n{output_}\n\n"
 
             elif os.environ["demo_method"] in ["retrieved", "reranked"]:
-                print("Debug: using retrieved/reranked demos")
-                print("Debug: prompt type is ", prompt_type)
                 if "<current query>" in prompt:
                     search_input = prompt.split("<current query>")[1].strip()
                 else:
@@ -215,19 +195,7 @@ class CrosswordsOperation(Node):
                     # print("r_d: ", r_d)
                     input_ = r_d["sample"]["input"]
                     output_ = r_d["sample"]["output"]
-                    #demo_str += f"{input_}\n{output_}\n\n"
-                    demo_str += (
-                        "=== Example ===\n"
-                        "Input:\n"
-                        f"{input_}\n\n"
-                        "Output:\n"
-                        "```txt\n"
-                        f"{output_}\n"
-                        "```\n"
-                        "=== End example ===\n\n"
-                    )
-
-                    # print(f"[DEBUG] Demo string is: {demo_str}...")
+                    demo_str += f"{input_}\n{output_}\n\n"
 
             else:
                 raise ValueError("Invalid demo_method")
@@ -235,9 +203,9 @@ class CrosswordsOperation(Node):
             prompt_2 = prompt_1.replace(
                 "<placeholder>", demo_str
             )
+            # print("prompt: ", prompt)
 
             response_ = await self.llm.agen([Message(role="user", content=prompt_2)], temperature=0.0)
-            print("response is: ", response_)
             # prompt_ = prompt.split("</cue>")[1].strip()
 
             cache[prompt_0] = response_
@@ -247,9 +215,7 @@ class CrosswordsOperation(Node):
             # else:
             #     cache[prompt_2.split("</cue>")[1].strip()] = response_
 
-            #LOG.info(f'prompt_message: {json.dumps({"input": prompt_2, "output": response_}, ensure_ascii=False)}')
-            LOG.info(f'prompt_message: {prompt_2}...')
-            LOG.info(f'output is: {response_[:50]}')
+            LOG.info(f'prompt_message: {json.dumps({"input": prompt_2, "output": response_}, ensure_ascii=False)}')
 
         else:
             response_ = cache[prompt_0]

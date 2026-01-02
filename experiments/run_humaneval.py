@@ -45,6 +45,22 @@ def parse_args():
     parser.add_argument("--llm", type=str, default="gpt-4-1106-preview")
     parser.add_argument("--learn_prompt", type=bool, default=False)
     parser.add_argument("--learn_demonstration", type=bool, default=False)
+    
+    # Demo-related arguments
+    parser.add_argument("--use_demo", type=str, default="false", choices=["true", "false"],
+                        help="Whether to use demonstrations (true/false)")
+    parser.add_argument("--demo_method", type=str, default="fixed", choices=["fixed", "retrieved", "reranked"],
+                        help="Method for selecting demonstrations: fixed (use all demos), retrieved (retrieve similar demos), or reranked (retrieve and rerank)")
+    parser.add_argument("--top_k", type=int, default=5,
+                        help="Number of demonstrations to retrieve (for retrieved/reranked methods)")
+    parser.add_argument("--top_k_2", type=int, default=3,
+                        help="Number of demonstrations to keep after reranking (for reranked method)")
+    parser.add_argument("--demo_base_path", type=str, default="data/humaneval_demos",
+                        help="Base path for demonstration files")
+    parser.add_argument("--embedding_model_path", type=str, default="sentence-transformers/all-MiniLM-L6-v2",
+                        help="Path to embedding model (for retrieved/reranked methods)")
+    parser.add_argument("--reranker_ckpt_path", type=str, default=None,
+                        help="Path to reranker checkpoint (for reranked method)")
 
     args = parser.parse_args()
     result_path = GPTSWARM_ROOT / "result"
@@ -62,7 +78,23 @@ async def main():
     dataset = JSONLReader.parse_file(args.dataset_json)
 
     ####################################
-
+    
+    # Set environment variables for demo configuration
+    os.environ["use_demo"] = args.use_demo
+    os.environ["demo_method"] = args.demo_method
+    os.environ["TOP_K"] = str(args.top_k)
+    os.environ["TOP_K_2"] = str(args.top_k_2)
+    os.environ["DEMO_BASE_PATH"] = args.demo_base_path
+    os.environ["EMBEDDING_MODEL_PATH"] = args.embedding_model_path
+    if args.reranker_ckpt_path:
+        os.environ["reranker_ckpt_path"] = args.reranker_ckpt_path
+    
+    print(f"[run_humaneval] Demo configuration:")
+    print(f"  use_demo: {args.use_demo}")
+    print(f"  demo_method: {args.demo_method}")
+    print(f"  top_k: {args.top_k}")
+    print(f"  top_k_2: {args.top_k_2}")
+    print(f"  demo_base_path: {args.demo_base_path}")
 
     current_time = Time.instance().value or time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     Time.instance().value = current_time

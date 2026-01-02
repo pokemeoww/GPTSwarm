@@ -10,17 +10,76 @@ from swarm.environment.prompt.prompt_set_registry import PromptSetRegistry
 
 @PromptSetRegistry.register('crosswords')
 class CrosswordsPromptSet(PromptSet):
-    @staticmethod
-    def get_propose_prompt(board, num_candidates=5):
-        return f'''Let's play a 5 x 5 mini crossword, where each word should have exactly 5 letters.
+    _retriever = None
 
+    @classmethod
+    def set_retriever(cls, retriever):
+        cls._retriever = retriever
+
+    @staticmethod
+    def _format_icl_example(example):
+        """Format a single ICL example without the 'Here are some examples' header.
+        
+        Handles all prompt types: propose_prompt, if_correct_prompt, suggest_prompt, value_prompt.
+        Extracts input from prompt_params and output from llm_output_text.
+        """
+        if not example:
+            return ""
+        
+        prompt_params = example.get("prompt_params", {})
+        output = example.get("llm_output_text", "N/A")
+        
+        # Determine input format based on what fields are in prompt_params
+        if "board" in prompt_params:
+            # For propose_prompt and suggest_prompt
+            input_text = prompt_params["board"]
+        elif "word" in prompt_params and "meaning" in prompt_params:
+            # For if_correct_prompt
+            word = prompt_params["word"]
+            meaning = prompt_params["meaning"]
+            input_text = f'Word: "{word}", Meaning: "{meaning}"'
+        elif "input" in prompt_params:
+            # For value_prompt
+            input_text = prompt_params["input"]
+        else:
+            # Fallback for unknown formats
+            input_text = str(prompt_params)
+        
+        return f"--- Example ---\nInput:\n{input_text}\n\nOutput:\n{output}\n\n"
+
+    @staticmethod
+    def _format_examples(examples):
+        """Format multiple ICL examples with a header.
+        
+        This provides the skeleton structure for ICL examples.
+        _format_icl_example handles the actual input/output extraction.
+        """
+        if not examples:
+            return ""
+        
+        formatted_str = "Here are some examples:\n\n"
+        for ex in examples:
+            formatted_str += CrosswordsPromptSet._format_icl_example(ex)
+        return formatted_str
+
+    @staticmethod
+    def get_propose_prompt(board):
+        examples_str = ""
+        if CrosswordsPromptSet._retriever:
+            retrieved_examples = CrosswordsPromptSet._retriever.retrieve(board, top_k=1)
+            examples_str = CrosswordsPromptSet._format_examples(retrieved_examples)
+
+        prompt = f'''<placeholder>Let's play a 5 x 5 mini crossword, where each word should have exactly 5 letters.
+
+<current query>
 {board}
 
 Given the current status, list all possible answers for unfilled or changed words, and your confidence levels (certain/high/medium/low), using the format "h1. apple (medium)". Use "certain" cautiously and only when you are 100% sure this is the correct word. You can list more then one possible answer for each word.
 '''
+        return prompt
     @staticmethod
     def get_if_correct_prompt(word, meaning):
-        return f'Does {word} has meaning "{meaning}"? Responde only Yes or No.'
+        return f'<placeholder>Does {word} has meaning "{meaning}"? Respond only Yes or No.'
     @staticmethod
     def get_suggest_prompt(board, impossible_words, correct_words, incorrect_words):
         feedback_words = {}
@@ -31,8 +90,9 @@ Given the current status, list all possible answers for unfilled or changed word
         if len(incorrect_words) > 0:
             feedback_words['Incorrect Words'] = incorrect_words
         feedback_words_str = '\n'.join([f'{key}:\n{value}\n---' for key, value in feedback_words.items()])
-        prompt = f'''You are playing a 5 x 5 mini crossword, where each word should have exactly 5 letters.
+        prompt = f'''<placeholder>You are playing a 5 x 5 mini crossword, where each word should have exactly 5 letters.
 Given the current status:
+<current query>
 {board}
 
 The target words are classified as'''
@@ -49,7 +109,7 @@ Do not include the phrase "next time" in your response.
     
     @staticmethod
     def get_value_prompt(input):
-        return f'''Evaluate if there exists a five letter word of some meaning that fit some letter constraints (sure/maybe/impossible).
+        return f'''<placeholder>Evaluate if there exists a five letter word of some meaning that fit some letter constraints (sure/maybe/impossible).
 
 Incorrect; to injure: w _ o _ g
 The letter constraint is: 5 letters, letter 1 is w, letter 3 is o, letter 5 is g.
