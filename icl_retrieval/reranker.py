@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+#from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from modelscope import AutoTokenizer, AutoModelForSequenceClassification
 from icl_retrieval.utils.device_utils import get_device
 
 

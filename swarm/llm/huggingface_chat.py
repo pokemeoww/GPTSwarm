@@ -3,7 +3,8 @@ import os
 from typing import List, Union, Optional
 from dotenv import load_dotenv
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+#from transformers import AutoTokenizer, AutoModelForCausalLM
+from modelscope import AutoTokenizer, AutoModelForCausalLM
 
 from swarm.utils.log import logger
 from swarm.llm.format import Message
@@ -44,7 +45,8 @@ class HuggingFaceChat(LLM):
         
         # Auto-detect device if not specified
         if device is None:
-            device = str(get_device())
+            # TODO: temp
+            device = "cuda"
         self.device = device
         
         # Set default dtype
@@ -149,6 +151,7 @@ class HuggingFaceChat(LLM):
         Returns:
             Generated text(s)
         """
+        print("In generate function")
         # Convert messages to prompt
         prompt = self._messages_to_prompt(messages)
         
@@ -163,6 +166,30 @@ class HuggingFaceChat(LLM):
         
         # Move inputs to device
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+
+        print("[passed]======= line170 ======= ")
+
+        # 检查关键 token ID 是否有效
+        vocab_size = self.model.config.vocab_size
+        print(f"Model vocab_size: {vocab_size}")
+
+        # 检查 pad_token_id 和 eos_token_id 是否小于 vocab_size
+        pad_token_id = self.tokenizer.pad_token_id
+        eos_token_id = self.tokenizer.eos_token_id
+
+        print(f"pad_token_id: {pad_token_id}, eos_token_id: {eos_token_id}")
+
+        assert pad_token_id is None or pad_token_id < vocab_size, f"pad_token_id {pad_token_id} >= vocab_size {vocab_size}"
+        assert eos_token_id is None or eos_token_id < vocab_size, f"eos_token_id {eos_token_id} >= vocab_size {vocab_size}"
+
+        # 在 generate 调用前检查输入
+        print("Inputs keys:", inputs.keys())
+        print("Input IDs dtype:", inputs['input_ids'].dtype)
+        print("Input IDs min/max:", inputs['input_ids'].min(), inputs['input_ids'].max())
+
+        # 确保最大索引不越界
+        if inputs['input_ids'].numel() > 0:
+            assert inputs['input_ids'].max() < vocab_size, "Input contains token ID larger than vocab_size!"
         
         # Generate
         with torch.no_grad():
@@ -176,30 +203,39 @@ class HuggingFaceChat(LLM):
                 eos_token_id=self.tokenizer.eos_token_id,
             )
         
+        print("[passed]======= line181 ======= ")
+        
         # Decode outputs
         # Use attention_mask to get actual prompt length (excluding padding)
         attention_mask = inputs.get("attention_mask")
         if attention_mask is not None:
-            # Get actual length for each sequence (sum of attention mask)
-            prompt_lens = attention_mask.sum(dim=1)
+            # 确保是 Python int，不是 torch.Tensor
+            prompt_lens = attention_mask.sum(dim=1).cpu().numpy().tolist()  # 转换为 Python list
         else:
-            # Fallback: assume no padding
-            prompt_lens = torch.full(
-                (inputs['input_ids'].size(0),),
-                inputs['input_ids'].size(1),
-                device=inputs['input_ids'].device,
-            )
+            prompt_lens = [inputs['input_ids'].size(1)] * num_comps
         
+        print("[passed]======= line191 ======= ")
+
         responses = []
         for i in range(num_comps):
             # Slice from actual prompt end, not from padded length
-            gen_ids = outputs[i, prompt_lens[i]:]
-            response = self.tokenizer.decode(
-                gen_ids,
-                skip_special_tokens=True
-            )
+            # 🔧 修复2：添加边界检查
+            start_idx = int(prompt_lens[i])  # 确保是整数
+            seq_len = outputs.size(1)  # 序列总长度
+            
+            if start_idx >= seq_len:
+                # 如果没有生成任何新 token
+                response = ""
+            else:
+                # 🔧 修复3：使用正确的切片语法
+                gen_ids = outputs[i, start_idx:]
+                response = self.tokenizer.decode(
+                    gen_ids,
+                    skip_special_tokens=True
+                )
             responses.append(response.strip())
-        
+
+        print("[passed]======= line212 ======= ")
         if num_comps == 1:
             return responses[0]
         return responses

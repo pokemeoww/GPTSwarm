@@ -27,6 +27,10 @@ from icl_retrieval.utils.device_utils import get_device
 
 from icl_retrieval.utils.io_utils import load_jsonl, dump_jsonl, load_json, dump_json
 
+"""
+poetry run python3 /root/sijia/GPTSwarm/icl_retrieval/run_reranker_ft.py
+rm -r experiments/run_1
+"""
 
 # 收集训练数据的金标准：
 def collect_data_for_training(list_demo_data, demo_retriever=None,
@@ -53,8 +57,10 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
     list_outputs = []
     list_sample_demos = []
     list_demo_llm_scores = []
-    for idx, samp in tqdm(enumerate(list_demo_data)):
 
+    print("[DEBUG] Length of demo data: ", len(list_demo_data))
+    for idx, samp in tqdm(enumerate(list_demo_data)):
+        print("[DEBUG] processing: ", idx)
         query = samp["input"]
         list_queries.append(query)
         output = samp["output"]
@@ -157,7 +163,7 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
                 # print("score_: ", score_)
                 demo_llm_scores.append(score_)
 
-        print("demo_llm_scores: ", demo_llm_scores)
+        # print("demo_llm_scores: ", demo_llm_scores)
         list_demo_llm_scores.append(demo_llm_scores)
 
         if len(list_demo_llm_scores) % 25 == 0 or idx == len(list_demo_data) - 1:
@@ -253,11 +259,11 @@ def run(args):
                     os.path.join(root, file)
                 )
     
-    # Debug mode: use only 200 samples for quick testing
+    # Debug mode: use only 300 samples for quick testing
     print(f"Total samples loaded: {len(list_demo_data)}")
     if args.debug:
         random.shuffle(list_demo_data)
-        list_demo_data = list_demo_data[:200]
+        list_demo_data = list_demo_data[:300]
         print(f"[DEBUG MODE] Using {len(list_demo_data)} samples for training")
     else:
         print(f"Using all {len(list_demo_data)} samples for training")
@@ -396,6 +402,7 @@ def run(args):
     best_test_acc = 0
     patience = 0
     for epoch_idx in tqdm(range(args.num_epochs)):
+        print("==== currently in epoch: ", epoch_idx)
 
         for samp_idx, (query, output, demos, demo_llm_scores) in tqdm(enumerate(zip(
                 list_queries_train,
@@ -568,18 +575,18 @@ def parse_args():
     # task
     # 路径
     args.add_argument('--output_dir', type=str, default="experiments/run_1/")
-    args.add_argument('--demo_data_path', type=str, default="src/demo_data_prepare/logs/list_proposal_demos.json")
-    args.add_argument('--embed_model_path', type=str, default="./resources/BAAI/bge-base-en-v1___5")
-    args.add_argument('--bert_model_path', type=str, default="./resources/BAAI/bge-base-en-v1___5")
+    args.add_argument('--demo_data_path', type=str, default="data/final_demo_jan_3_train_reranker")
+    args.add_argument('--embed_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
+    args.add_argument('--bert_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
 
     # training hyper-params
     args.add_argument('--learning_rate', type=float, default=1e-4)
     args.add_argument('--gradient_accumulation_steps', type=int, default=16)
     args.add_argument('--warmup_steps', type=int, default=100)
-    args.add_argument('--num_epochs', type=int, default=10)
+    args.add_argument('--num_epochs', type=int, default=3)
     
     # debug mode
-    args.add_argument('--debug', action='store_true', help='Use only 200 samples for quick testing')
+    args.add_argument('--debug', action='store_true', help='Use only 300 samples for quick testing')
 
     args = args.parse_args()
     return args

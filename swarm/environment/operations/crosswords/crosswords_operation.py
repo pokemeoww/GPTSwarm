@@ -24,14 +24,18 @@ if use_demo.lower() == "true":
     print(f"[CrosswordsOperation] Loading demo models for method: {use_demo}")
     
     embedding_model_path = os.environ["EMBEDDING_MODEL_PATH"]
+    # TODO: this is for China use
+    from modelscope import snapshot_download
+    model_dir = snapshot_download(embedding_model_path)
+    
     from icl_retrieval.utils.retrievers import FaissRetriever
     
-    # Get device - use CPU for embedding model to save MPS memory
+    # Get device
     device = 'cpu'
     print(f"[CrosswordsOperation] Using device for embedding model: {device}")
     
     embed_model = SentenceTransformer(
-                embedding_model_path
+                model_dir if model_dir else embedding_model_path
             ).to(device)
     embed_model.eval()
     
@@ -248,7 +252,7 @@ class CrosswordsOperation(Node):
             #     cache[prompt_2.split("</cue>")[1].strip()] = response_
 
             #LOG.info(f'prompt_message: {json.dumps({"input": prompt_2, "output": response_}, ensure_ascii=False)}')
-            LOG.info(f'prompt_message: {prompt_2}...')
+            #LOG.info(f'prompt_message: {prompt_2}...')
             LOG.info(f'output is: {response_[:50]}')
 
         else:

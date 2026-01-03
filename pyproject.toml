@@ -20,7 +20,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.10,<3.14"
 aiohttp = "^3.9.0"
 apscheduler = "^3.10.4"
 arxiv = "^2.0.0"
@@ -28,11 +28,11 @@ beautifulsoup4 = "^4.12.2"
 charset-normalizer = "^3.3.2"
 class-registry = "^2.1.2"
 docx = "^0.2.4"
-fastapi = "0.109.2"
+fastapi = ">=0.109.2"
 func-timeout = "^4.3.5"
 google-api-python-client = "^2.111.0"
 gradio = "^4.11.0"
-httpx = "^0.25.2"
+httpx = ">=0.25.2"
 jsonlines = "^4.0.0"
 loguru = "0.7.2"
 markdown = "^3.5.1"
@@ -62,13 +62,17 @@ tqdm = "^4.66.1"
 transformers = "^4.36.2"
 wikipedia = "^1.4.0"
 astunparse = "^1.6.3"
-torch = ">=2.1.0, <=2.2.2"
+torch = ">=2.1.0, <=2.9.1"
 async-timeout = "^4.0.3"
 numpy = "^1.25.2"
+modelscope = "^1.33.0"
+faiss-gpu = "^1.7.2"
+accelerate = "^1.12.0"
+vllm = "^0.13.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
-setuptools = "^69.1.1"
+setuptools = ">=69.1.1"
 pytest-asyncio = "^0.23.5"
 build = "^1.1.1"
 coverage = "^6"
@@ -77,3 +81,21 @@ twine = "^5.0.0"
 poetry-core = "^1.9.0"
 poetry = "^1.8.2"
 coveralls = "^3.3.1"
+
+[[tool.poetry.source]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+
+[[tool.poetry.source]]
+name = "pytorch"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pytorch-wheels/cu118"
+priority = "primary"
+
+
+[[tool.poetry.source]]
+name = "pytorch-cuda"
+url = "https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch"
+priority = "primary"
+

@@ -78,5 +78,5 @@ class FaissRetriever:
                 }
                 results.append(result)
         
-        print(f"Retrieved {len(results)} results for query: {query[:50]}...")
+        # print(f"Retrieved {len(results)} results for query: {query[:50]}...")
         return {"query2query": results}

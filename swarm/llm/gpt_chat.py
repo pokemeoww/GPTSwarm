@@ -44,9 +44,16 @@ def gpt_chat(
     else:
         api_key = random.sample(OPENAI_API_KEYS, 1)[0]
         api_kwargs = dict(api_key=api_key)
-    client = OpenAI(**api_kwargs)
+    #client = OpenAI(**api_kwargs)
+
+    #TODO: vllm
+    client = OpenAI(
+        base_url="http://localhost:8000/v1",
+        api_key="",
+    )
 
     formated_messages = [asdict(message) for message in messages]
+    
     response = client.chat.completions.create(model=model,
     messages=formated_messages,
     max_tokens=max_tokens,
@@ -83,7 +90,12 @@ async def gpt_achat(
     else:
         api_key = random.sample(OPENAI_API_KEYS, 1)[0]
         api_kwargs = dict(api_key=api_key)
-    aclient = AsyncOpenAI(**api_kwargs)
+    #aclient = AsyncOpenAI(**api_kwargs)
+    #TODO: vllm
+    aclient = AsyncOpenAI(
+        base_url="http://localhost:8000/v1",
+        api_key="",
+    )
 
     formated_messages = [asdict(message) for message in messages]
     try:

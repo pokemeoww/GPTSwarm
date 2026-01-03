@@ -28,7 +28,10 @@ def parse_args():
     parser.add_argument(
         '--model', 
         type=str, 
-        default='gpt-3.5-turbo-1106',
+        #default='gpt-3.5-turbo-1106',
+        # TODO: this is for vllm hosting
+        #default='/root/autodl-tmp/qwen_4b_model/qwen/Qwen3-4B-Instruct-2507',
+        default='/root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct',
         help='Model name. Examples: gpt-4, gpt-3.5-turbo-1106, hf:gpt2, hf:meta-llama/Llama-2-7b-chat-hf'
     )
     
@@ -229,7 +232,7 @@ if __name__ == "__main__":
     
     # Run optimization
     if args.debug:
-        num_iter = 1
+        num_iter = 3
     print(f"✓ Starting optimization for {num_iter} iterations...")
     optimize(
         swarm, 

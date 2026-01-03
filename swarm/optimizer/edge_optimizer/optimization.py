@@ -33,8 +33,11 @@ def optimize(swarm, evaluator, num_iter=100, lr=1e-1, display_freq=10, batch_siz
         else:
             moving_averages = np.array([result[1] for result in results])
         loss = (-torch.stack(log_probs) * torch.tensor(np.array(utilities[-batch_size:]) - moving_averages)).mean()
+        print("loss:", loss.item())
         loss.backward()
         optimizer.step()
+
+        print("optimizer.step() Finish")
 
         # Print iteration summary
         current_utilities = utilities[-batch_size:]

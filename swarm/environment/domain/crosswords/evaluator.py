@@ -54,7 +54,7 @@ class CrosswordsEvaluator():
             score = 0
         else:
             if self.verbose:
-                print("answer: ", answer)
+                print("answer evaluator: ", answer)
             valid = [x for x in answer if isinstance(x, dict) and "env" in x]
             if not valid:
                 raise RuntimeError(f"No valid answers. Got: {type(answer)}. Got answers: {answer}")
