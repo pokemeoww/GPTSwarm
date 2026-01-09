@@ -60,8 +60,8 @@ def parse_args():
     parser.add_argument(
         '--dataset',
         type=str,
-        choices=['debug', 'dev', 'test', 'train', 'mini'],
-        default='dev',
+        choices=['debug', 'test'],
+        default='test',
         help='Dataset to use. debug: single example, dev: development set, test: test set, train: training set, mini: mini0505_0_100_5'
     )
     
@@ -83,7 +83,7 @@ def parse_args():
     parser.add_argument(
         '--num_iter',
         type=int,
-        default=2,
+        default=3,
         help='Number of optimization iterations'
     )
     
@@ -101,17 +101,8 @@ def get_dataset_path(dataset_choice, debug_mode):
     if debug_mode or dataset_choice == 'debug':
         # return "datasets/crosswords/single_example.json"
         return "datasets/crosswords/mini_0505_dev.json"
-    elif dataset_choice == 'dev':
-        return "datasets/crosswords/mini_0505_dev.json"
-    elif dataset_choice == 'test':
-        return "datasets/crosswords/mini0505_test.json"
-    elif dataset_choice == 'train':
-        return "datasets/crosswords/mini0505_train.json"
-    elif dataset_choice == 'mini':
-        return "datasets/crosswords/mini0505_0_100_5.json"
     else:
-        raise ValueError(f"Unknown dataset choice: {dataset_choice}")
-
+        return "datasets/crosswords/mini0505_test.json"
 
 def setup_icl_environment(use_icl, icl_method):
     """Configure environment variables for ICL."""
@@ -173,7 +164,8 @@ if __name__ == "__main__":
         # TODO: batch size decides how many puzzles to evaluate in parallel
         batch_size = 2
     else:
-        batch_size = 20
+        # 46 test data
+        batch_size = 46
     
     # Generate experiment ID
     model_name = args.model.replace('/', '_').replace(':', '_')
@@ -233,6 +225,8 @@ if __name__ == "__main__":
     # Run optimization
     if args.debug:
         num_iter = 3
+    else:
+        num_iter = args.num_iter
     print(f"✓ Starting optimization for {num_iter} iterations...")
     optimize(
         swarm, 

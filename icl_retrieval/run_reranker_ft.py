@@ -73,9 +73,27 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
 
         demos = demo_retriever.search_once(
             query,
-            top_k=15,
+            top_k=20,
             # top_k=int(os.environ["TOP_K"])
         )["query2query"]
+
+
+        # TODO: add a filtering step!
+        # 过滤掉与当前query相同的demo
+        filtered_demos = []
+        for demo in demos:
+            demo_input = demo["sample"]["input"]
+            # 如果demo的input与当前query不同，才保留
+            if query not in demo_input and demo_input != query:
+                filtered_demos.append(demo)
+            
+            # 如果已经收集到足够的demos，就停止
+            if len(filtered_demos) >= 15:
+                break
+        
+        demos = filtered_demos
+        # TODO: end of filtering step
+
         list_sample_demos.append(demos)
 
         # 对每个demo，采用大模型条件生成，得到 评分
@@ -166,6 +184,8 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
         # print("demo_llm_scores: ", demo_llm_scores)
         list_demo_llm_scores.append(demo_llm_scores)
 
+        torch.cuda.empty_cache()
+
         if len(list_demo_llm_scores) % 25 == 0 or idx == len(list_demo_data) - 1:
             pickle.dump(
                 list_queries,
@@ -183,6 +203,9 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
                 list_demo_llm_scores,
                 open(os.path.join(output_dir, f"list_demo_llm_scores_{mode}.pkl"), "wb")
             )
+
+            del outputs_2, logits_2, answer_probs
+            torch.cuda.empty_cache()
 
     return list_queries, list_outputs, list_sample_demos, \
            list_demo_llm_scores
@@ -261,6 +284,7 @@ def run(args):
     
     # Debug mode: use only 300 samples for quick testing
     print(f"Total samples loaded: {len(list_demo_data)}")
+
     if args.debug:
         random.shuffle(list_demo_data)
         list_demo_data = list_demo_data[:300]
@@ -574,8 +598,8 @@ def parse_args():
 
     # task
     # 路径
-    args.add_argument('--output_dir', type=str, default="experiments/run_1/")
-    args.add_argument('--demo_data_path', type=str, default="data/final_demo_jan_3_train_reranker")
+    args.add_argument('--output_dir', type=str, default="experiments/run_mmlu_pro_14B/")
+    args.add_argument('--demo_data_path', type=str, default="data/experiences/demos_jan_8_mmlu_pro_dev_14B")
     args.add_argument('--embed_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
     args.add_argument('--bert_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
 
@@ -583,9 +607,9 @@ def parse_args():
     args.add_argument('--learning_rate', type=float, default=1e-4)
     args.add_argument('--gradient_accumulation_steps', type=int, default=16)
     args.add_argument('--warmup_steps', type=int, default=100)
-    args.add_argument('--num_epochs', type=int, default=3)
+    args.add_argument('--num_epochs', type=int, default=5)
     
-    # debug mode
+    # debug mode:
     args.add_argument('--debug', action='store_true', help='Use only 300 samples for quick testing')
 
     args = args.parse_args()

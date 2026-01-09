@@ -30,7 +30,7 @@ def main():
     parser.add_argument(
         "--embed_model",
         type=str,
-        default="BAAI/bge-base-en-v1.5",
+        default="/root/autodl-tmp/BAAI/bge-base-en-v1___5",
         help="Sentence transformer model name or path"
     )
     parser.add_argument(

@@ -6,7 +6,7 @@ from swarm.graph.swarm import Swarm
 from swarm.environment.operations.final_decision import MergingStrategy
 from experiments.evaluator.evaluator import Evaluator
 from experiments.evaluator.datasets.mmlu_dataset import MMLUDataset
-from datasets.MMLU.download import download
+from experiments.evaluator.datasets.mmlu_pro_dataset import MMLUProDataset
 
 """
 Run MMLU Pro
@@ -21,10 +21,12 @@ def parse_args():
     parser.add_argument('--num-truthful-agents', type=int, default=1,
                         help="Number of truthful agents. The total will be N truthful and N adversarial.")
 
-    parser.add_argument('--num-iterations', type=int, default=200,
+    parser.add_argument('--num-iterations', type=int, default=50,
                         help="Number of optimization iterations. Default 200.")
 
-    parser.add_argument('--model_name', type=str, default=None,
+    ## API model name: qwen-max, qwen-plus, deepseek-r1
+    ## local host model name: /root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct
+    parser.add_argument('--model_name', type=str, default='qwen-max',
                         help="Model name, None runs the default ChatGPT4.")
 
     parser.add_argument('--domain', type=str, default="mmlu",
@@ -77,10 +79,19 @@ async def main():
 
     tag = f"{domain}_{swarm_name}_{strategy.name}_{mode}"
 
-    download()
+    #dataset_train = MMLUDataset('dev')
+    #dataset_val = MMLUDataset('val')
 
-    dataset_train = MMLUDataset('dev')
-    dataset_val = MMLUDataset('val')
+    # TODO: switch to MMLU Pro dataset
+    #dataset_train = MMLUProDataset(filename="validation-00000-of-00001.parquet")
+    #dataset_val = MMLUProDataset(filename="validation-00000-of-00001.parquet")
+
+    dataset_train = MMLUProDataset(filename="mmlu_pro_demo_collection_train.parquet")
+    #dataset_train = MMLUProDataset(filename="mmlu_pro_final_evaluator_train.parquet")
+    #dataset_train = MMLUProDataset(filename="mmlu_pro_final_val.parquet")
+
+    # this is the test dataset
+    dataset_val = MMLUProDataset(filename="mmlu_pro_final_test.parquet")
 
     evaluator = Evaluator(
         swarm,
@@ -91,7 +102,8 @@ async def main():
         enable_artifacts=True,
         tensorboard_tag=tag)
 
-    limit_questions = 5 if debug else 153
+    # limit_questions = 5 if debug else 153
+    limit_questions = 10
 
     if mode == 'DirectAnswer':
         score = await evaluator.evaluate_direct_answer(

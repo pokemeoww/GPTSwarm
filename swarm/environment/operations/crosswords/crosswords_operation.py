@@ -24,14 +24,12 @@ if use_demo.lower() == "true":
     print(f"[CrosswordsOperation] Loading demo models for method: {use_demo}")
     
     embedding_model_path = os.environ["EMBEDDING_MODEL_PATH"]
-    # TODO: this is for China use
-    from modelscope import snapshot_download
-    model_dir = snapshot_download(embedding_model_path)
+    model_dir = embedding_model_path
     
     from icl_retrieval.utils.retrievers import FaissRetriever
     
     # Get device
-    device = 'cpu'
+    device = 'cuda'
     print(f"[CrosswordsOperation] Using device for embedding model: {device}")
     
     embed_model = SentenceTransformer(

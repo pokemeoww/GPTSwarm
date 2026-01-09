@@ -34,7 +34,7 @@ class HumanEvalPromptSet(PromptSet):
 
     @staticmethod
     def get_react_prompt(question, solution, feedback):
-        return f"""Here is an unsuccessful attempt for solving the folloing question:
+        return f"""Here is an unsuccessful attempt for solving the following question:
 Question:
 {question}
 Attempted Solution:

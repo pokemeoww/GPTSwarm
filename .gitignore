@@ -199,3 +199,8 @@ datasets/gaia/utils/*.jsonl
 data/
 v0_icl_retriever_test/
 reranker_output/
+
+poetry.*
+
+datasets/mmlu/*
+experiments/*

@@ -29,9 +29,25 @@ class MMLUPromptSet(PromptSet):
             Only one letter (A, B, C or D) is allowed in your answer.
         """
 
+        # TODO: add reasoning and multi choice
+        # return """
+        #     I will ask you a question.
+        #     I will also give you multiple possible answers, each marked with a letter (A, B, C, D, etc.).
+        #     Only one answer out of the offered options is correct.
+        #     You must choose the correct answer to the question.
+            
+        #     Your response should be in the following format:
+        #     ANSWER: [The letter corresponding to the correct answer]
+        #     REASONING: [Brief reasoning or explanation of your thought process]
+            
+        #     Only include ANSWER: and REASONING: sections in your response.
+        #     The ANSWER must be exactly one letter (like A, B, C, D, E, etc.) that matches one of the provided options.
+        # """
+
     @staticmethod
     def get_format():
-        return "one of the letters: A, B, C or D"
+        #return "one of the letters: A, B, C or D"
+        return "a single capital letter corresponding to the correct option (e.g., A, B, C, D, etc.)"
 
     @staticmethod
     def get_answer_prompt(question):

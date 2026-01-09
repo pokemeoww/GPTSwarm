@@ -4,6 +4,8 @@ import torch.nn as nn
 from modelscope import AutoTokenizer, AutoModelForSequenceClassification
 from icl_retrieval.utils.device_utils import get_device
 
+from transformers import BitsAndBytesConfig
+
 
 class RerankerModel(nn.Module):
     def __init__(
@@ -16,7 +18,17 @@ class RerankerModel(nn.Module):
         print(f"[RerankerModel] Using device: {self.device}")
 
         self.tokenizer = AutoTokenizer.from_pretrained(bert_model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(bert_model_path)
+
+    #     bnb_config = BitsAndBytesConfig(
+    #     load_in_4bit=True,
+    #     bnb_4bit_quant_type="nf4",
+    #     bnb_4bit_use_double_quant=True,
+    #     bnb_4bit_compute_dtype=torch.bfloat16
+    # )
+        
+        self.model = AutoModelForSequenceClassification.from_pretrained(bert_model_path,
+        #quantization_config=bnb_config
+        )
         self.model = self.model.to(self.device)
 
         self.act = torch.nn.Sigmoid()

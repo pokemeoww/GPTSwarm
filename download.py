@@ -5,7 +5,7 @@ import sys
 
 def download_model():
     # 模型名称
-    model_id = 'Qwen/Qwen2.5-3B'
+    model_id = 'Qwen/Qwen2.5-14B-Instruct'
     
     # 保存路径
     save_dir = '/root/autodl-tmp/'

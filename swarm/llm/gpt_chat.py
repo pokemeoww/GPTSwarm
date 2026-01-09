@@ -21,6 +21,12 @@ LM_STUDIO_URL = "http://localhost:1234/v1"
 
 
 load_dotenv()
+if os.getenv("USE_QWEN_API", "false").lower() == "true":
+    DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+    if DASHSCOPE_API_KEY is None:
+        raise ValueError("DASHSCOPE_API_KEY is not set in environment variables.")
+    print("[GPTChat] Using Qwen model with Dashscope API key.")
+
 OPENAI_API_KEYS=[os.getenv(f"OPENAI_API_KEY")]
 for i in range(10):
     if os.getenv(f"OPENAI_API_KEY{i}"):
@@ -41,16 +47,26 @@ def gpt_chat(
     api_kwargs: Dict[str, Any]
     if model == "lmstudio":
         api_kwargs = dict(base_url=LM_STUDIO_URL)
+    
+    # TODO: for QWEN Support
+    elif "qwen" in model.lower() and os.getenv("USE_QWEN_API", "false").lower() == "true":
+        print("[DEBUG][QWEN] Using Qwen model with Dashscope API key.")
+        api_kwargs = dict(
+            api_key=DASHSCOPE_API_KEY,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+            )
     else:
         api_key = random.sample(OPENAI_API_KEYS, 1)[0]
         api_kwargs = dict(api_key=api_key)
-    #client = OpenAI(**api_kwargs)
 
-    #TODO: vllm
-    client = OpenAI(
-        base_url="http://localhost:8000/v1",
-        api_key="",
-    )
+    if os.getenv("USE_QWEN_API", "false").lower() == "true":
+        client = OpenAI(**api_kwargs)
+    else:
+        #TODO: use vllm to host local model
+        client = OpenAI(
+            base_url="http://localhost:8000/v1",
+            api_key="",
+        )
 
     formated_messages = [asdict(message) for message in messages]
     
@@ -84,15 +100,34 @@ async def gpt_achat(
     if messages[0].content == '$skip$':
         return '' 
 
+    extra_body = {}
+
     api_kwargs: Dict[str, Any]
     if model == "lmstudio":
         api_kwargs = dict(base_url=LM_STUDIO_URL)
+
+    # TODO: for QWEN/DS Support
+    elif os.getenv("USE_QWEN_API", "false").lower() == "true":
+        print("[DEBUG][QWEN] Using Qwen/DS model with Dashscope API key.")
+        api_kwargs = dict(
+            api_key=DASHSCOPE_API_KEY,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+            )
+        # Whether output reasoning
+        if os.getenv("QWEN_API_OUTPUT_REASONING", "false").lower() == "true":
+            extra_body = {"enable_thinking": True, "max_tokens_thinking": 200}
     else:
         api_key = random.sample(OPENAI_API_KEYS, 1)[0]
         api_kwargs = dict(api_key=api_key)
+
     #aclient = AsyncOpenAI(**api_kwargs)
-    #TODO: vllm
-    aclient = AsyncOpenAI(
+
+    if os.getenv("USE_QWEN_API", "false").lower() == "true":
+        print("[DEBUG][QWEN] Creating AsyncOpenAI client for Qwen model.")
+        aclient = AsyncOpenAI(**api_kwargs)
+    else:
+        #TODO: use vllm to host local model
+        aclient = AsyncOpenAI(
         base_url="http://localhost:8000/v1",
         api_key="",
     )
@@ -107,17 +142,34 @@ async def gpt_achat(
             top_p=1,
             frequency_penalty=0.0,
             presence_penalty=0.0,
-            n=num_comps)
+            n=num_comps,
+            extra_body=extra_body
+            )
     except asyncio.TimeoutError:
         print('Timeout')
         raise TimeoutError("GPT Timeout")
+
+    has_reasoning = os.getenv("QWEN_API_OUTPUT_REASONING", "false").lower() == "true"
     if num_comps == 1:
+        thinking = ""
+        if has_reasoning:
+            thinking = response.choices[0].message.reasoning_content
         cost_count(response, model)
-        return response.choices[0].message.content
+        return response.choices[0].message.content, thinking
     
     cost_count(response, model)
 
-    return [choice.message.content for choice in response.choices]
+    thinking = []
+
+    if has_reasoning:
+        for choice in response.choices:
+            message = choice.message
+            if hasattr(message, 'reasoning_content') and message.reasoning_content is not None:
+                thinking.append(message.reasoning_content)
+            else:
+                thinking.append("")
+
+    return [choice.message.content for choice in response.choices], thinking
 
 
 @LLMRegistry.register('GPTChat')

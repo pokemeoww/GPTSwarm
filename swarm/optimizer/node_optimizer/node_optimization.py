@@ -4,9 +4,16 @@ import asyncio
 from swarm.environment.operations.optimizable_operation import OptimizableOperation
 
 async def optimize(node: OptimizableOperation, learn_demonstration=False, learn_prompt=True):
-    examples = node.memory.query_by_id(node.id)[-4:] 
+    all_examples = node.memory.query_by_id(node.id)
+
+    #print("[Debug] all examples length: ", len(all_examples))
+
+    examples = all_examples[-4:]
     positive_examples = [example for example in examples if node.memory.query_by_id(example['task'])[0]]
     negative_examples = [example for example in examples if not node.memory.query_by_id(example['task'])[0]]
+
+    #print("positive_example looks like: ", positive_examples)
+    # print("node.demonstration looks like: ", node.domenstrations) // this is always empty
 
     prompts = [node.prompt]
     demonstrations = [node.domenstrations]
