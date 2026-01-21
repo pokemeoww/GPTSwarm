@@ -114,13 +114,16 @@ class DirectAnswer(Node):
                 reranker_demos = self.get_demos(task)
                 print("Reranker demos: ", reranker_demos)
                 print("format demos: ", self.format_demos(reranker_demos))
-                demo_instruct_prompt = "I will provide you with some examples of how to answer similar questions. Please carefully study the pattern and reasoning.\n\n"
-                prompt = prompt + demo_instruct_prompt + self.format_demos(reranker_demos)
+                demo_instruct_prompt = "I will provide you with some examples. Please study the reasoning.\n\n"
+                # prompt = prompt + demo_instruct_prompt + self.format_demos(reranker_demos)
+                prompt = demo_instruct_prompt + self.format_demos(reranker_demos) + prompt
 
             message = [Message(role="system", content=f"You are a {role}. {constraint}"),
                        Message(role="user", content=prompt)]
             
             answer, reasoning = await self.llm.agen(message, max_tokens=self.max_token)
+            #answer = self.parse_model_answer(raw_answer)
+
             #answer, reasoning, valid = self.parse_model_response_with_reasoning(response_raw)
 
             execution = {
@@ -158,11 +161,32 @@ class DirectAnswer(Node):
             demonstrations, reranked_scores = demo_reranker.predict(task, demos_tmp)
             print("[Debug]Reranked_scores: ", reranked_scores)
 
-            human_eval_top_k = int(os.environ.get("MMLU_PRO_TOP_K", "3"))
-            demos_tmp = demonstrations[:human_eval_top_k]
+            top_k = int(os.environ.get("MMLU_PRO_TOP_K", "3"))
+            demos_tmp = demonstrations[:top_k]
 
             # Extract the actual demo content
             return demos_tmp
+    
+    def parse_model_answer(self, text):
+        print("DEBUG: Raw model response text:", text)
+        text = text.strip()
+
+        answer = text
+        
+        # 方法1: 查找 ANSWER: X 格式
+        answer_patterns = [
+            r'ANSWER:\s*([A-Z])',  # ANSWER: A
+            r'Answer:\s*([A-Z])',  # Answer: A
+        ]
+
+        for pattern in answer_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                answer = match.group(1).upper()
+                break
+        
+        return answer
+
 
 
     # def parse_model_response_with_reasoning(self, text):
@@ -251,21 +275,68 @@ class DirectAnswer(Node):
     #                     "=== End example ===\n\n"
     #                 )
     #     return formatted_demos
+
+    def extract_final_answer(self, text):
+        """
+        从文本中提取 \\boxed{} 内的单个字母答案。
+        
+        参数:
+            text (str): 包含答案的文本。
+            
+        返回:
+            str: 提取到的字母（如 'A', 'B', 'J'），如果未找到则返回 None。
+        """
+        # 正则表达式模式：匹配 \\boxed{字母}
+        pattern = r'\\boxed\{([A-Z])\}'
+        match = re.search(pattern, text)
+        
+        if match:
+            # group(1) 对应第一个括号捕获的内容，即字母
+            return match.group(1)
+        else:
+            return None
     
     def format_demos(self, demos: List[dict]) -> str:
-        # format using "## EXAMPLE ##\n" input output
+        # 构建演示示例
         formatted_demos = ""
+
         for demo in demos:
             text = demo['sample']
-            formatted_demos += (
+            demo_answer_single_letter = self.extract_final_answer(text['output'])
+            demo_single_answer_place_holder = "[FINAL_ANSWER_LETTER]"
+            formatted_demo = (
                 f"## EXAMPLE ##\n"
-                f"**Question:**\n"
-                f"{text['input']}\n\n"
-                f"**Correct Answer:**\n"
-                f"```\n"
-                f"{text['output']}\n"
-                f"```\n"
+                f"**Question:** {text['input']}\n\n"
+                f"**Complete Analysis:**\n"
+                f"{text['output']}\n\n"
+                "[FINAL_ANSWER_LETTER]\n"
                 f"## END EXAMPLE ##\n\n"
             )
+            if demo_answer_single_letter is not None:
+                formatted_demo = formatted_demo.replace(demo_single_answer_place_holder, 
+            f"**Expected Output Format (letter only):** {demo_answer_single_letter}\n")
+            else:
+                formatted_demo = formatted_demo.replace(demo_single_answer_place_holder, "")
+            formatted_demos += formatted_demo
         return formatted_demos
+
+
+    # def format_demos(self, demos: List[dict]) -> str:
+    #     # format using "## EXAMPLE ##\n" input output
+    #     formatted_demos = ""
+    #     for demo in demos:
+    #         text = demo['sample']
+    #         formatted_demos += (
+    #             f"## EXAMPLE ##\n"
+    #             f"**Question:**\n"
+    #             f"{text['input']}\n\n"
+    #             f"**Reasoning:**\n"
+    #             f"```\n"
+    #             f"{text['output']}\n"
+    #             f"```\n"
+    #             f"**Output Answer:**\n"
+    #             f"{text['answer']}\n"
+    #             f"## END EXAMPLE ##\n\n"
+    #         )
+    #     return formatted_demos
         

@@ -21,12 +21,12 @@ def parse_args():
     parser.add_argument('--num-truthful-agents', type=int, default=1,
                         help="Number of truthful agents. The total will be N truthful and N adversarial.")
 
-    parser.add_argument('--num-iterations', type=int, default=50,
+    parser.add_argument('--num-iterations', type=int, default=100,
                         help="Number of optimization iterations. Default 200.")
 
-    ## API model name: qwen-max, qwen-plus, deepseek-r1
+    ## API model name: qwen3-max-preview, qwen-plus, deepseek-r1
     ## local host model name: /root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct
-    parser.add_argument('--model_name', type=str, default='qwen-max',
+    parser.add_argument('--model_name', type=str, default='qwen-plus',
                         help="Model name, None runs the default ChatGPT4.")
 
     parser.add_argument('--domain', type=str, default="mmlu",
@@ -86,8 +86,8 @@ async def main():
     #dataset_train = MMLUProDataset(filename="validation-00000-of-00001.parquet")
     #dataset_val = MMLUProDataset(filename="validation-00000-of-00001.parquet")
 
-    dataset_train = MMLUProDataset(filename="mmlu_pro_demo_collection_train.parquet")
-    #dataset_train = MMLUProDataset(filename="mmlu_pro_final_evaluator_train.parquet")
+    #dataset_train = MMLUProDataset(filename="mmlu_pro_demo_collection_train.parquet")
+    dataset_train = MMLUProDataset(filename="mmlu_pro_final_evaluator_train.parquet")
     #dataset_train = MMLUProDataset(filename="mmlu_pro_final_val.parquet")
 
     # this is the test dataset
@@ -102,8 +102,7 @@ async def main():
         enable_artifacts=True,
         tensorboard_tag=tag)
 
-    # limit_questions = 5 if debug else 153
-    limit_questions = 10
+    limit_questions = 5 if debug else 153
 
     if mode == 'DirectAnswer':
         score = await evaluator.evaluate_direct_answer(

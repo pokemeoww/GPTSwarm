@@ -31,7 +31,7 @@ def parse_args():
         #default='gpt-3.5-turbo-1106',
         # TODO: this is for vllm hosting
         #default='/root/autodl-tmp/qwen_4b_model/qwen/Qwen3-4B-Instruct-2507',
-        default='/root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct',
+        default='/root/autodl-tmp/Qwen/Qwen2.5-14B-Instruct',
         help='Model name. Examples: gpt-4, gpt-3.5-turbo-1106, hf:gpt2, hf:meta-llama/Llama-2-7b-chat-hf'
     )
     

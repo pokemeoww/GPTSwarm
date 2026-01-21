@@ -89,9 +89,19 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
             
             # 如果已经收集到足够的demos，就停止
             if len(filtered_demos) >= 15:
-                break
+                break        
         
         demos = filtered_demos
+
+        if len(demos) == 0:
+            print(f"[WARN] No demos left after filtering at idx={idx}. Using unfiltered top-1 fallback.")
+            demos = demo_retriever.search_once(query, top_k=1)["query2query"]
+            if len(demos) == 0:
+                print(f"[WARN] Retriever returned 0 demos at idx={idx}. Skipping.")
+                continue
+        
+        print("DEBUG: Number of demo left is: ", len(demos))
+
         # TODO: end of filtering step
 
         list_sample_demos.append(demos)
@@ -598,8 +608,8 @@ def parse_args():
 
     # task
     # 路径
-    args.add_argument('--output_dir', type=str, default="experiments/run_mmlu_pro_14B/")
-    args.add_argument('--demo_data_path', type=str, default="data/experiences/demos_jan_8_mmlu_pro_dev_14B")
+    args.add_argument('--output_dir', type=str, default="experiments/run_crosswords_gptmini/")
+    args.add_argument('--demo_data_path', type=str, default="/root/sijia/GPTSwarm/data/crosswords_demos/gpt5_mini_Jan_19_dev")
     args.add_argument('--embed_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
     args.add_argument('--bert_model_path', type=str, default="/root/autodl-tmp/BAAI/bge-base-en-v1___5")
 

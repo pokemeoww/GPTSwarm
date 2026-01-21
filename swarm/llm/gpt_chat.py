@@ -115,7 +115,7 @@ async def gpt_achat(
             )
         # Whether output reasoning
         if os.getenv("QWEN_API_OUTPUT_REASONING", "false").lower() == "true":
-            extra_body = {"enable_thinking": True, "max_tokens_thinking": 200}
+            extra_body = {"enable_thinking": True, "max_tokens_thinking": 50}
     else:
         api_key = random.sample(OPENAI_API_KEYS, 1)[0]
         api_kwargs = dict(api_key=api_key)
@@ -155,7 +155,7 @@ async def gpt_achat(
         if has_reasoning:
             thinking = response.choices[0].message.reasoning_content
         cost_count(response, model)
-        return response.choices[0].message.content, thinking
+        return response.choices[0].message.content
     
     cost_count(response, model)
 
@@ -169,7 +169,7 @@ async def gpt_achat(
             else:
                 thinking.append("")
 
-    return [choice.message.content for choice in response.choices], thinking
+    return [choice.message.content for choice in response.choices]
 
 
 @LLMRegistry.register('GPTChat')

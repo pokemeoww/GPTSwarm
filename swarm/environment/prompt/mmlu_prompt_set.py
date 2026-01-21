@@ -19,17 +19,42 @@ class MMLUPromptSet(PromptSet):
 
     @staticmethod
     def get_constraint():
+        # return """
+        #     I will ask you a question.
+        #     I will also give you 4 answers enumerated as A, B, C and D.
+        #     Only one answer out of the offered 4 is correct.
+        #     You must choose the correct answer to the question.
+        #     Your response must be one of the 4 letters: A, B, C or D,
+        #     corresponding to the correct answer.
+        #     Only one letter (A, B, C or D) is allowed in your answer.
+        # """
+    
+        # return """
+        #     I will ask you a question.
+        #     I will also give you multiple possible answers, each marked with a letter (A, B, C, D, etc.).
+        #     Only one answer out of the offered options is correct.
+        #     You must choose the correct answer to the question.
+
+        #     Your reasoning content MUST be brief and should contain only:
+        #     - The key formula or rule
+        #     - The minimal calculation or inference
+        #     - The final choice justification
+
+        #     Your response must be one of the letters corresponding to the correct answer.
+        #     Only include ANSWER: section in your response.
+        #     Only one letter is allowed in your answer.
+        # """
+    
         return """
             I will ask you a question.
-            I will also give you 4 answers enumerated as A, B, C and D.
-            Only one answer out of the offered 4 is correct.
+            I will also give you multiple possible answers, each marked with a letter (A, B, C, D, etc.).
+            Only one answer out of the offered options is correct.
             You must choose the correct answer to the question.
-            Your response must be one of the 4 letters: A, B, C or D,
-            corresponding to the correct answer.
-            Only one letter (A, B, C or D) is allowed in your answer.
+
+            Your response must be one of the letters corresponding to the correct answer.
+            Only one letter is allowed in your answer.
         """
 
-        # TODO: add reasoning and multi choice
         # return """
         #     I will ask you a question.
         #     I will also give you multiple possible answers, each marked with a letter (A, B, C, D, etc.).

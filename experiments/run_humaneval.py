@@ -3,6 +3,7 @@
 
 import os
 import argparse
+from dotenv import load_dotenv
 import yaml
 import json
 import re
@@ -20,7 +21,7 @@ from swarm.utils.log import logger
 from swarm.environment.operations.optimizable_operation import OptimizableOperation
 from swarm.optimizer.node_optimizer.node_optimization import optimize
 
-
+load_dotenv()
 def clean_model_name(model_path: str) -> str:
     """清理模型名称，用于文件名"""
     # 提取最后一部分
@@ -62,12 +63,13 @@ def parse_args():
     # TODO updated
     # parser.add_argument("--llm", type=str, default="gpt-4-1106-preview")
     parser.add_argument("--llm", type=str, default="/root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct")
+    #parser.add_argument("--llm", type=str, default="deepseek-v3")
 
     parser.add_argument("--learn_prompt", type=bool, default=False)
     parser.add_argument("--learn_demonstration", type=bool, default=False)
     
     args = parser.parse_args()
-    result_path = GPTSWARM_ROOT / "result"
+    result_path = GPTSWARM_ROOT / "result" / "humaneval"
     os.makedirs(result_path, exist_ok=True)
     if args.config:
         config_args = YAMLReader.parse(args.config, return_str=False)
@@ -75,7 +77,9 @@ def parse_args():
             setattr(args, key, value)
     return args
 
-async def main():
+async def main(run_id, top_k_from_parsing = None):
+    print("DEBUG: Starting main function for run_id:", run_id)
+    GlobalMemory.instance().reset()
     args = parse_args()
     result_file = None
 
@@ -84,7 +88,26 @@ async def main():
     ####################################
     current_time = Time.instance().value or time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     Time.instance().value = current_time
-    result_dir = Path(f"{GPTSWARM_ROOT}/result/eval")
+
+
+    ####################################
+    ## TODO: RENAME!!!
+    if top_k_from_parsing is not None:
+        top_k_ = top_k_from_parsing
+        os.environ["HUMAN_EVAL_TOP_K"] = str(top_k_from_parsing)
+        print("[DEBUG] Setting HUMAN_EVAL_TOP_K to ", top_k_from_parsing)
+    else:   
+        top_k_ = os.environ["HUMAN_EVAL_TOP_K"]
+    use_demo_ = "use_demo" if os.environ["HUMAN_EVAL_USE_DEMO"].lower() == "true" else "no_demo"
+    base_path = os.environ["HUMAN_EVAL_DEMO_BASE_PATH"]
+
+    if use_demo_ == "use_demo":
+        result_dir = Path(f"{GPTSWARM_ROOT}/result/humaneval/{run_id}_human_eval_qwenRerank_7b_{use_demo_}_top{top_k_}")
+    else:
+        result_dir = Path(f"{GPTSWARM_ROOT}/result/humaneval/{run_id}_human_eval_qwenRerank_7b_{use_demo_}")
+    ####################################
+
+
     result_dir.mkdir(parents=True, exist_ok=True)
 
     clean_llm_name = clean_model_name(args.llm)
@@ -127,8 +150,11 @@ async def main():
             "Solution": answer,
             "Total solved": total_solved,
             "Total executed": total_executed,
-            "Accuracy": accuracy
+            "Accuracy": accuracy,
         }
+        if use_demo_:
+            updated_item["BaseRerankerModel"] = base_path
+
         data.append(updated_item)
 
         with open(result_file, 'w') as file:
@@ -139,4 +165,15 @@ async def main():
             await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    list_top_k_to_test = [1, 2, 3]
+    run_ids = [0, 1, 2, 3, 4]
+    #run_ids = [5]
+
+    for top_k_to_test in list_top_k_to_test:
+        for run_id in run_ids:
+            print(f"===== Run {run_id + 1}, top_k={top_k_to_test} ====================")
+            asyncio.run(main(run_id=run_id, top_k_from_parsing=top_k_to_test))
+    
+    # for run_id in run_ids:
+    #     print(f"===== Run {run_id + 1}====================")
+    #     asyncio.run(main(run_id=run_id, top_k_from_parsing=None))

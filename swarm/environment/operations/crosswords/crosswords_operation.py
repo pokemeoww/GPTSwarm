@@ -21,6 +21,7 @@ use_demo = os.environ.get("use_demo", "false")
 
 # Only load embedding model and retrievers if using ICL
 if use_demo.lower() == "true":
+    print("[DEMO] Crossword demo enabled")
     print(f"[CrosswordsOperation] Loading demo models for method: {use_demo}")
     
     embedding_model_path = os.environ["EMBEDDING_MODEL_PATH"]
@@ -38,7 +39,7 @@ if use_demo.lower() == "true":
     embed_model.eval()
     
     # Base path for demo files
-    demo_base_path = os.environ.get("DEMO_BASE_PATH", "data/final_demo_dec_13")
+    demo_base_path = os.environ.get("DEMO_BASE_PATH", "/root/sijia/GPTSwarm/data/crosswords_demos/gpt5_mini_Jan_19_train")
     
     demo_retriever = FaissRetriever(
         os.path.join(demo_base_path, "direct_demos.json"),
@@ -239,7 +240,7 @@ class CrosswordsOperation(Node):
             )
 
             response_ = await self.llm.agen([Message(role="user", content=prompt_2)], temperature=0.0)
-            print("response is: ", response_)
+            # print("response is: ", response_)
             # prompt_ = prompt.split("</cue>")[1].strip()
 
             cache[prompt_0] = response_
@@ -251,7 +252,7 @@ class CrosswordsOperation(Node):
 
             #LOG.info(f'prompt_message: {json.dumps({"input": prompt_2, "output": response_}, ensure_ascii=False)}')
             #LOG.info(f'prompt_message: {prompt_2}...')
-            LOG.info(f'output is: {response_[:50]}')
+            # LOG.info(f'output is: {response_[:50]}')
 
         else:
             response_ = cache[prompt_0]

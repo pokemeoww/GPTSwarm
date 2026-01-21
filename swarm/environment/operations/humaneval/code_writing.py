@@ -77,7 +77,9 @@ class CodeWriting(OptimizableOperation):
 
         self.use_demo = os.environ.get("HUMAN_EVAL_USE_DEMO", "false").lower() == "true"
         if self.use_demo:
-            prompt += "\nUse the provided examples below as guidance to write better code.\n"
+            prompt += ("You will be shown a few solved examples.\n"
+        "Each example contains an Input and the corresponding Output.\n"
+        "Follow the same pattern to solve the final task.\n")
 
         super().__init__(domain, False, prompt, model_name, operation_description, id)
         self.domain = domain
@@ -88,25 +90,6 @@ class CodeWriting(OptimizableOperation):
         self.constraint = self.prompt_set.get_constraint()
 
         self.experience_file = f"data/experiences/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}/code_writing_demos.jsonl"
-
-        
-        # Load demos if use_demo is enabled
-        self.use_demo = os.environ.get("use_demo", "false").lower() == "true"
-        self.demo_method = os.environ.get("demo_method", "fixed")
-        
-        if self.use_demo and self.demo_method == "fixed":
-            # Load fixed demos
-            demo_base_path = os.environ.get("DEMO_BASE_PATH", "data/humaneval_demos")
-            demo_path = os.path.join(demo_base_path, "code_demos.json")
-            if os.path.exists(demo_path):
-                with open(demo_path, 'r') as f:
-                    demos = json.load(f)
-                # Use all available demos for fixed mode
-                self.domenstrations = demos
-                print(f"[CodeWriting] Loaded {len(self.domenstrations)} fixed demos")
-            else:
-                print(f"[CodeWriting] Warning: Demo file not found at {demo_path}")
-                self.domenstrations = []
 
     @property
     def node_name(self):
@@ -155,9 +138,7 @@ class CodeWriting(OptimizableOperation):
                         "Input:\n"
                         f"{text['input']}\n\n"
                         "Output:\n"
-                        "```txt\n"
                         f"{text['output']}\n"
-                        "```\n"
                         "=== End example ===\n\n"
                     )
         return formatted_demos
@@ -185,20 +166,23 @@ class CodeWriting(OptimizableOperation):
 
                 if self.use_demo:
                     reranker_demos = self.get_demos(task)
-                    print("Reranker demos: ", reranker_demos)
-                    print("format demos: ", self.format_demos(reranker_demos))
+                    print("DEBUG: reranker demos length: ", len(reranker_demos))
+                    #print("Reranker demos: ", reranker_demos)
+                    #print("format demos: ", self.format_demos(reranker_demos))
                     prompt = self.prompt + self.format_demos(reranker_demos)
+                    prompt += "### Now solve the following task\n"
                 
-                print("final prompt is: ", prompt)
+                print("final prompt is: ", prompt[:50])
                 message = self.get_messages(input, prompt, self.domenstrations)
                 
                 response = await self.llm.agen(message)
+                #print("DEBUG: execute Raw model response text:", response)
                 response = response.strip("```python\n").strip("```")
 
                 is_solved, feedback, _ = PyExecutor().execute(response, self.internal_tests, timeout=10)
 
                 # Save experience
-                # store_experience(input, response, is_solved, self.experience_file) 
+                #store_experience(input, response, is_solved, "", self.experience_file) 
 
                 execution = {
                     "operation": self.node_name,
@@ -233,6 +217,8 @@ class CodeWriting(OptimizableOperation):
         for input in inputs:
             message = self.get_messages(input['input'], prompt, domenstrations)
             response = await self.llm.agen(message)
+            #print("DEBUG: evaluate Raw model response text:", response)
+
             response = response.strip("```python\n").strip("```")
             tests = self.extract_example(input['task'])
             is_solved, _, _ = PyExecutor().execute(response, tests, timeout=10)

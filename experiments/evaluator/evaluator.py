@@ -264,7 +264,8 @@ class Evaluator():
             loss_list: List[torch.Tensor] = []
             utilities: List[float] = []
             for raw_answer, log_prob, correct_answer in zip(raw_answers, log_probs, correct_answers):
-                answer = dataset.postprocess_answer(raw_answer)
+                ## TODO: since output both reasoning and answer, need to parse
+                answer = dataset.postprocess_answer(raw_answer[0])
                 assert isinstance(correct_answer, str), \
                     f"String expected but got {correct_answer} of type {type(correct_answer)} (1)"
                 accuracy = Accuracy()
