@@ -160,7 +160,7 @@ class CrosswordsOperation(Node):
             prompt_type = prompt_type_cls(prompt_1)
             top_k = int(os.environ["TOP_K"])
             if os.environ["demo_method"] == "fixed":
-
+                print("DEBUG: USING FIXED demos")
                 if prompt_type == "propose":
                     demos_tmp = copy.deepcopy(list_propose_demos[ :top_k])
                 elif prompt_type == "if_correct":
@@ -178,7 +178,9 @@ class CrosswordsOperation(Node):
                     input_ = r_d["input"]
                     output_ = r_d["output"]
                     demo_str += f"{input_}\n{output_}\n\n"
-
+                
+                print("final fixed demo string is: ", demo_str[:10])
+                
             elif os.environ["demo_method"] in ["retrieved", "reranked"]:
                 print("Debug: using retrieved/reranked demos")
                 print("Debug: prompt type is ", prompt_type)

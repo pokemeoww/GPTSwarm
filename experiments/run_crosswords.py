@@ -31,7 +31,7 @@ def parse_args():
         #default='gpt-3.5-turbo-1106',
         # TODO: this is for vllm hosting
         #default='/root/autodl-tmp/qwen_4b_model/qwen/Qwen3-4B-Instruct-2507',
-        default='/root/autodl-tmp/Qwen/Qwen2.5-14B-Instruct',
+        default='/root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct',
         help='Model name. Examples: gpt-4, gpt-3.5-turbo-1106, hf:gpt2, hf:meta-llama/Llama-2-7b-chat-hf'
     )
     
@@ -106,12 +106,13 @@ def get_dataset_path(dataset_choice, debug_mode):
 
 def setup_icl_environment(use_icl, icl_method):
     """Configure environment variables for ICL."""
-    if use_icl:
-        os.environ['demo_method'] = icl_method
-        print(f"✓ ICL enabled with method: {icl_method}")
-    else:
-        os.environ['demo_method'] = 'fixed'
-        print("✓ ICL disabled (baseline mode)")
+    # if use_icl:
+    #     os.environ['demo_method'] = icl_method
+    #     print(f"✓ ICL enabled with method: {icl_method}")
+    # else:
+    #     os.environ['demo_method'] = 'fixed'
+    #     print("✓ ICL disabled (baseline mode)")
+    print("whether use ICL: ", use_icl)
 
 
 def save_experiment_config(args, file_path, experiment_id):

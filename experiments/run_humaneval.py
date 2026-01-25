@@ -62,7 +62,7 @@ def parse_args():
 
     # TODO updated
     # parser.add_argument("--llm", type=str, default="gpt-4-1106-preview")
-    parser.add_argument("--llm", type=str, default="/root/autodl-tmp/Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--llm", type=str, default="/root/autodl-tmp/Qwen/Qwen2.5-14B-Instruct")
     #parser.add_argument("--llm", type=str, default="deepseek-v3")
 
     parser.add_argument("--learn_prompt", type=bool, default=False)
@@ -101,16 +101,16 @@ async def main(run_id, top_k_from_parsing = None):
     use_demo_ = "use_demo" if os.environ["HUMAN_EVAL_USE_DEMO"].lower() == "true" else "no_demo"
     base_path = os.environ["HUMAN_EVAL_DEMO_BASE_PATH"]
 
-    if use_demo_ == "use_demo":
-        result_dir = Path(f"{GPTSWARM_ROOT}/result/humaneval/{run_id}_human_eval_qwenRerank_7b_{use_demo_}_top{top_k_}")
-    else:
-        result_dir = Path(f"{GPTSWARM_ROOT}/result/humaneval/{run_id}_human_eval_qwenRerank_7b_{use_demo_}")
-    ####################################
+    clean_llm_name = clean_model_name(args.llm)
 
+    if use_demo_ == "use_demo":
+        result_dir = Path(f"{GPTSWARM_ROOT}/result/{current_time}/humaneval/{run_id}_human_eval_{clean_llm_name}_{use_demo_}_top{top_k_}")
+    else:
+        result_dir = Path(f"{GPTSWARM_ROOT}/result/{current_time}/humaneval/{run_id}_human_eval_{clean_llm_name}_{use_demo_}")
+    ################################----
 
     result_dir.mkdir(parents=True, exist_ok=True)
 
-    clean_llm_name = clean_model_name(args.llm)
     result_file = result_dir / f"{'' if args.learn_prompt else 'not'}_learn_prompt_{'' if args.learn_demonstration else 'not'}_learn_demo_{clean_llm_name}_{current_time}.json"
     agent = CodeReact(domain="humaneval", 
                    model_name=args.llm,
@@ -165,15 +165,15 @@ async def main(run_id, top_k_from_parsing = None):
             await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
-    list_top_k_to_test = [1, 2, 3]
+    #list_top_k_to_test = [1]
     run_ids = [0, 1, 2, 3, 4]
     #run_ids = [5]
 
-    for top_k_to_test in list_top_k_to_test:
-        for run_id in run_ids:
-            print(f"===== Run {run_id + 1}, top_k={top_k_to_test} ====================")
-            asyncio.run(main(run_id=run_id, top_k_from_parsing=top_k_to_test))
+    # for top_k_to_test in list_top_k_to_test:
+    #     for run_id in run_ids:
+    #         print(f"===== Run {run_id + 1}, top_k={top_k_to_test} ====================")
+    #         asyncio.run(main(run_id=run_id, top_k_from_parsing=top_k_to_test))
     
-    # for run_id in run_ids:
-    #     print(f"===== Run {run_id + 1}====================")
-    #     asyncio.run(main(run_id=run_id, top_k_from_parsing=None))
+    
+    print(f"===== Run ====================")
+    asyncio.run(main(run_id=0, top_k_from_parsing=None))

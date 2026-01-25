@@ -79,7 +79,8 @@ class CodeWriting(OptimizableOperation):
         if self.use_demo:
             prompt += ("You will be shown a few solved examples.\n"
         "Each example contains an Input and the corresponding Output.\n"
-        "Follow the same pattern to solve the final task.\n")
+        "These examples are provided to demonstrate the expected I/O format.\n"
+        "For the final task, implement a solution that satisfies the given docstring and tests.\n")
 
         super().__init__(domain, False, prompt, model_name, operation_description, id)
         self.domain = domain
@@ -172,7 +173,7 @@ class CodeWriting(OptimizableOperation):
                     prompt = self.prompt + self.format_demos(reranker_demos)
                     prompt += "### Now solve the following task\n"
                 
-                print("final prompt is: ", prompt[:50])
+                #print("final prompt is: ", prompt[:50])
                 message = self.get_messages(input, prompt, self.domenstrations)
                 
                 response = await self.llm.agen(message)
