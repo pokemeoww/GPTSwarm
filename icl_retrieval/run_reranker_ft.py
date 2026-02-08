@@ -73,7 +73,7 @@ def collect_data_for_training(list_demo_data, demo_retriever=None,
 
         demos = demo_retriever.search_once(
             query,
-            top_k=20,
+            top_k=15,
             # top_k=int(os.environ["TOP_K"])
         )["query2query"]
 
@@ -617,7 +617,7 @@ def parse_args():
     args.add_argument('--learning_rate', type=float, default=1e-4)
     args.add_argument('--gradient_accumulation_steps', type=int, default=16)
     args.add_argument('--warmup_steps', type=int, default=100)
-    args.add_argument('--num_epochs', type=int, default=5)
+    args.add_argument('--num_epochs', type=int, default=10)
     
     # debug mode:
     args.add_argument('--debug', action='store_true', help='Use only 300 samples for quick testing')

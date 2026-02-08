@@ -208,13 +208,14 @@ class CrosswordsOperation(Node):
                 else:
                     raise ValueError("Invalid prompt_type")
 
+                demos_tmp_length = len(demos_tmp)
+
                 if os.environ["demo_method"] == "reranked":
                     # rerank demo to top_k_2
                     top_k_2 = int(os.environ["TOP_K_2"])
                     demonstrations, reranked_scores = demo_reranker.predict(search_input, demos_tmp)
-                    print("reranked_scores: ", reranked_scores)
                     demos_tmp = demonstrations[: top_k_2]
-
+                
                 demo_str = ""
                 for r_d in demos_tmp:
                     # print("r_d: ", r_d)
